@@ -1,7 +1,14 @@
-FROM ubuntu:22.04
+FROM python:3.10
 
 RUN apt-get update && apt-get install -y libreoffice
 
-# run libreoffice in headless mode with a file from args
-ENTRYPOINT ["libreoffice", "--headless", "--convert-to", "pdf"]
-CMD ["/tmp/input.docx"]
+COPY requirements.txt ./
+RUN pip install -r requirements.txt --no-cache-dir
+
+COPY extractor_info.json extractor.py ./
+
+WORKDIR ./
+ENV PYTHONPATH=./
+
+CMD ["python3","extractor.py", "--heartbeat", "40"]
+
