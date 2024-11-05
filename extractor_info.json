@@ -1,0 +1,24 @@
+{
+    "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+    "name": "soffice-extractor",
+    "version": "0.1",
+    "description": "LibreOffice extractor running headless",
+    "author": "Mathew, Minu <minum@illinois.edu>",
+    "contributors": [],
+    "contexts": [{}],
+    "repository": [
+      {
+        "repType": "git",
+        "repUrl": "https://github.com/clowder-framework/extractors-soffice"
+      }
+    ],
+    "process": {
+      "file": [
+        "manual-submission"
+      ]
+    },
+    "external_services": [],
+    "dependencies": [],
+    "bibtex": []
+  }
+  
