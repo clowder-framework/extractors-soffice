@@ -1,10 +1,8 @@
 # text extractor wrapper
 # wraps process_pdf.py
 
-import time
 import logging
 import os
-from datetime import datetime
 import subprocess
 
 from pyclowder.extractors import Extractor
@@ -39,23 +37,50 @@ class SofficeExtractor(Extractor):
         input_file_id = resource['id']
         dataset_id = resource['parent'].get('id')
         input_filename = os.path.splitext(os.path.basename(resource["name"]))[0]
+        input_dir = os.path.dirname(input_file) or "."
         input_file_ext = resource['file_ext']
-        output_file = os.path.join(os.path.splitext(os.path.basename(input_file))[0] + ".pdf")
-        output_pdf_filename = os.path.join(input_filename + ".pdf")
+        converted_basename = os.path.splitext(os.path.basename(input_file))[0] + ".pdf"
+        soffice_output_file = os.path.join(input_dir, converted_basename)
+        output_pdf_filename = input_filename + ".pdf"
         # These process messages will appear in the Clowder UI under Extractions.
         connector.message_process(resource, "Loading contents of file...")
-        
-        # call soffice to convert to pdf
-        subprocess.call( ['soffice',
-                 '--headless',
-                 '--convert-to',
-                 'pdf',
-                 input_file ] ) 
-        # Rename the output file to match the desired PDF filename
-        subprocess.call(['mv', output_file, output_pdf_filename])
 
-        log.info("Output Pdf file generated : %s", output_pdf_filename)
+        # Call soffice and force the output directory so we know where PDF lands.
+        convert_result = subprocess.run(
+            [
+                'soffice',
+                '--headless',
+                '--convert-to',
+                'pdf',
+                '--outdir',
+                input_dir,
+                input_file
+            ],
+            capture_output=True,
+            text=True
+        )
+
+        if convert_result.returncode != 0 and not os.path.exists(soffice_output_file):
+            log.error("soffice conversion failed for %s", input_file)
+            if convert_result.stdout:
+                log.error("soffice stdout: %s", convert_result.stdout.strip())
+            if convert_result.stderr:
+                log.error("soffice stderr: %s", convert_result.stderr.strip())
+            raise RuntimeError("soffice failed to convert input file to PDF")
+
+        if convert_result.returncode != 0 and os.path.exists(soffice_output_file):
+            log.warning("soffice returned non-zero but PDF exists for %s", input_file)
+            if convert_result.stderr:
+                log.warning("soffice stderr: %s", convert_result.stderr.strip())
+
+        if not os.path.exists(soffice_output_file):
+            raise FileNotFoundError("Converted PDF not found: %s" % soffice_output_file)
+
+        # Rename output file to match the desired PDF filename for upload.
+        os.replace(soffice_output_file, output_pdf_filename)
+
         connector.message_process(resource, "Word to pdf conversion completed.")
+        log.info("Output Pdf file generated : %s", output_pdf_filename)
 
         # clean existing duplicate
         files_in_dataset = pyclowder.datasets.get_file_list(connector, host, secret_key, dataset_id)
@@ -68,11 +93,20 @@ class SofficeExtractor(Extractor):
         # upload to clowder
         connector.message_process(resource, "Uploading output files to Clowder...")
         pdf_fileid = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, output_pdf_filename)
+        log.info("SOffice PDF file ID: %s", pdf_fileid)
         # upload metadata to dataset
-        extracted_files = [
-            {"file_id": input_file_id, "filename": input_filename, "description": "Input word file"},
-            {"file_id": pdf_fileid, "filename": output_pdf_filename, "description": "PDF output file"},
-        ]
+        extracted_files = {
+            "input_word_file": {
+                "file_id": input_file_id,
+                "filename": input_filename,
+                "description": "Input word file"
+            },
+            "output_pdf_file": {
+                "file_id": pdf_fileid,
+                "filename": output_pdf_filename,
+                "description": "PDF output file"
+            }
+        }
         content = {"extractor": "soffice-extractor", "extracted_files": extracted_files}
         context = "http://clowder.ncsa.illinois.edu/contexts/metadata.jsonld"
         #created_at = datetime.now().strftime("%a %d %B %H:%M:%S UTC %Y")

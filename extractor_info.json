@@ -1,7 +1,7 @@
 {
     "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
     "name": "soffice-extractor",
-    "version": "0.1",
+    "version": "0.2",
     "description": "LibreOffice extractor running headless",
     "author": "Mathew, Minu <minum@illinois.edu>",
     "contributors": [],
