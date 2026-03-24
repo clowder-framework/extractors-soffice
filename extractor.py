@@ -69,10 +69,18 @@ class SofficeExtractor(Extractor):
         connector.message_process(resource, "Uploading output files to Clowder...")
         pdf_fileid = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, output_pdf_filename)
         # upload metadata to dataset
-        extracted_files = [
-            {"file_id": input_file_id, "filename": input_filename, "description": "Input word file"},
-            {"file_id": pdf_fileid, "filename": output_pdf_filename, "description": "PDF output file"},
-        ]
+        extracted_files = {
+            "input_word_file": {
+                "file_id": input_file_id,
+                "filename": input_filename,
+                "description": "Input word file"
+            },
+            "output_pdf_file": {
+                "file_id": pdf_fileid,
+                "filename": output_pdf_filename,
+                "description": "PDF output file"
+            }
+        }
         content = {"extractor": "soffice-extractor", "extracted_files": extracted_files}
         context = "http://clowder.ncsa.illinois.edu/contexts/metadata.jsonld"
         #created_at = datetime.now().strftime("%a %d %B %H:%M:%S UTC %Y")
