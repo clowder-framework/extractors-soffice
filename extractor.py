@@ -1,13 +1,9 @@
 # text extractor wrapper
 # wraps process_pdf.py
 
-import time
 import logging
 import os
-from datetime import datetime
 import subprocess
-import tempfile
-from pathlib import Path
 
 from pyclowder.extractors import Extractor
 import pyclowder.files
