@@ -80,7 +80,7 @@ class SofficeExtractor(Extractor):
         os.replace(soffice_output_file, output_pdf_filename)
 
         connector.message_process(resource, "Word to pdf conversion completed.")
-        connector.message_process(resource, "Output Pdf file generated : %s", output_pdf_filename)
+        log.info("Output Pdf file generated : %s", output_pdf_filename)
 
         # clean existing duplicate
         files_in_dataset = pyclowder.datasets.get_file_list(connector, host, secret_key, dataset_id)
